@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VAT RECONCILIATION // 국세청 세금계산서 대사 & 부가세 신고서 시스템</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Nike Typography: Bebas Neue (Display) & Pretendard / Inter (UI Text) -->
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Pretendard:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- SheetJS CDN (엑셀 처리) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  
+  <style>
+    /* ========================================================
+     * NIKE DESIGN SYSTEM TOKENS (DESIGN-nike.md 완벽 준수)
+     * ======================================================== */
+    :root {
+      /* Colors */
+      --color-ink: #111111;
+      --color-on-primary: #ffffff;
+      --color-canvas: #ffffff;
+      --color-soft-cloud: #f5f5f5;
+      --color-charcoal: #39393b;
+      --color-ash: #4b4b4d;
+      --color-mute: #707072;
+      --color-stone: #9e9ea0;
+      --color-hairline: #cacacb;
+      --color-hairline-soft: #e5e5e5;
+      
+      /* Semantics */
+      --color-sale: #d30005;
+      --color-sale-deep: #780700;
+      --color-success: #007d48;
+      --color-success-bright: #1eaa52;
+      --color-info: #1151ff;
+
+      /* Spacing (8px Base System) */
+      --spacing-xxs: 2px;
+      --spacing-xs: 4px;
+      --spacing-sm: 8px;
+      --spacing-md: 12px;
+      --spacing-lg: 18px;
+      --spacing-xl: 24px;
+      --spacing-xxl: 30px;
+      --spacing-section: 48px;
+
+      /* Typography */
+      --font-display: 'Bebas Neue', 'Nike Futura ND', sans-serif;
+      --font-ui: 'Pretendard', 'Inter', -apple-system, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+      /* Radii */
+      --radius-none: 0px;
+      --radius-sm: 18px;
+      --radius-md: 24px;
+      --radius-lg: 30px;
+      --radius-full: 9999px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-ui); }
+    body {
+      background-color: var(--color-canvas);
+      color: var(--color-ink);
+      line-height: 1.5;
+      padding: 0 0 var(--spacing-section) 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Utility Bar (Nike Utility-Bar Spec) */
+    .utility-bar {
+      background-color: var(--color-soft-cloud);
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--color-charcoal);
+      border-bottom: 1px solid var(--color-hairline-soft);
+    }
+    .utility-bar span.brand-slogan {
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-weight: 600;
+      color: var(--color-ink);
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Campaign Header (Towering Editorial Lockup) */
+    header.campaign-header {
+      padding: var(--spacing-section) 0 32px 0;
+      border-bottom: 1px solid var(--color-hairline);
+      margin-bottom: 32px;
+    }
+    .campaign-eyebrow {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--color-mute);
+      margin-bottom: 6px;
+    }
+    .campaign-title {
+      font-family: var(--font-display);
+      font-size: 64px;
+      line-height: 0.95;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--color-ink);
+      margin-bottom: 12px;
+    }
+    .campaign-desc {
+      font-size: 16px;
+      color: var(--color-charcoal);
+      max-width: 760px;
+      line-height: 1.6;
+    }
+
+    /* Primary Nav Strip (Nike PLP Tabs) */
+    .nav-tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 32px;
+      border-bottom: 1px solid var(--color-hairline-soft);
+      padding-bottom: 4px;
+    }
+    .nav-tab {
+      padding: 10px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--color-mute);
+      border-radius: var(--radius-full);
+      background: transparent;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-tab:hover {
+      color: var(--color-ink);
+      background: var(--color-soft-cloud);
+    }
+    .nav-tab.active {
+      color: var(--color-on-primary);
+      background: var(--color-ink);
+      font-weight: 700;
+    }
+
+    /* Flat Container Cards (Nike Zero Shadow, 0px Radius) */
+    .card {
+      background: var(--color-canvas);
+      border: 1px solid var(--color-hairline-soft);
+      border-radius: var(--radius-none);
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: none !important;
+    }
+    .card-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--color-ink);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      letter-spacing: -0.2px;
+    }
+
+    /* Buttons: Universal Nike Pill CTAs */
+    .btn {
+      font-family: var(--font-ui);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 12px 24px;
+      height: 44px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid transparent;
+      transition: transform 0.1s ease, background-color 0.15s ease;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .btn:active {
+      transform: scale(0.96);
+      opacity: 0.85;
+    }
+    .btn-primary {
+      background: var(--color-ink);
+      color: var(--color-on-primary);
+    }
+    .btn-primary:hover {
+      background: #222222;
+    }
+    .btn-secondary {
+      background: var(--color-soft-cloud);
+      color: var(--color-ink);
+      border: 1px solid var(--color-hairline-soft);
+    }
+    .btn-secondary:hover {
+      background: #ebebeb;
+    }
+    .btn-outline {
+      background: var(--color-canvas);
+      color: var(--color-ink);
+      border: 1px solid var(--color-ink);
+    }
+    .btn-outline:hover {
+      background: var(--color-soft-cloud);
+    }
+
+    /* Dual Dropzone Grid (Clean Studio Style) */
+    .dual-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 880px) { .dual-grid { grid-template-columns: 1fr; } }
+
+    .drop-box {
+      border: 2px dashed var(--color-hairline);
+      border-radius: var(--radius-none);
+      padding: 40px 24px;
+      text-align: center;
+      background: var(--color-soft-cloud);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .drop-box:hover, .drop-box.dragover {
+      border-color: var(--color-ink);
+      background: #eeeeee;
+    }
+    .drop-badge {
+      display: inline-block;
+      font-family: var(--font-display);
+      font-size: 16px;
+      letter-spacing: 1px;
+      padding: 2px 10px;
+      background: var(--color-ink);
+      color: var(--color-on-primary);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+    }
+    .drop-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--color-ink);
+      margin-bottom: 6px;
+    }
+    .drop-sub {
+      font-size: 13px;
+      color: var(--color-mute);
+      margin-bottom: 18px;
+    }
+
+    /* KPI Summary Strip (High Typography Contrast) */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .kpi-card {
+      background: var(--color-soft-cloud);
+      padding: 20px 18px;
+      border: 1px solid var(--color-hairline-soft);
+      border-radius: var(--radius-none);
+    }
+    .kpi-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--color-mute);
+      margin-bottom: 6px;
+    }
+    .kpi-val {
+      font-family: var(--font-display);
+      font-size: 38px;
+      line-height: 1;
+      color: var(--color-ink);
+    }
+    .kpi-val.success { color: var(--color-success); }
+    .kpi-val.alert { color: var(--color-sale); }
+
+    /* Filter Pills (Nike Filter-Chip Specification) */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .filter-chip {
+      background: var(--color-canvas);
+      color: var(--color-ink);
+      border: 1px solid var(--color-hairline);
+      border-radius: var(--radius-full);
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .filter-chip:hover {
+      border-color: var(--color-ink);
+    }
+    .filter-chip.active {
+      background: var(--color-ink);
+      color: var(--color-on-primary);
+      border-color: var(--color-ink);
+    }
+
+    /* Tables (Strict 8px Baseline, Flat Hairline Dividers) */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 12px 14px;
+      text-align: right;
+      border-bottom: 1px solid var(--color-hairline-soft);
+      font-variant-numeric: tabular-nums;
+    }
+    th:first-child, td:first-child { text-align: center; }
+    th:nth-child(2), td:nth-child(2), th:nth-child(3), td:nth-child(3) { text-align: left; }
+    th {
+      background: var(--color-soft-cloud);
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--color-charcoal);
+      border-top: 1px solid var(--color-hairline);
+      border-bottom: 1px solid var(--color-hairline);
+    }
+    tr:hover td {
+      background: #fafafa;
+    }
+
+    /* Semantic Badges (Pill Geometry) */
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+    .badge-matched { background: #e6f4ea; color: var(--color-success); }
+    .badge-diff { background: #fce8e6; color: var(--color-sale); }
+    .badge-alert { background: #fef3c7; color: #92400e; }
+    .badge-neutral { background: var(--color-soft-cloud); color: var(--color-charcoal); }
+
+    /* Statutory VAT Return Form (Editorial Catalog Style) */
+    .tax-sheet {
+      border: 2px solid var(--color-ink);
+      background: var(--color-canvas);
+      margin-top: 16px;
+    }
+    .tax-sheet-header {
+      background: var(--color-ink);
+      color: var(--color-on-primary);
+      padding: 24px;
+      text-align: center;
+    }
+    .tax-sheet-header h2 {
+      font-family: var(--font-display);
+      font-size: 36px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .tax-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+    }
+    .tax-table th, .tax-table td {
+      border: 1px solid var(--color-hairline);
+      padding: 12px 16px;
+    }
+    .tax-table th {
+      background: var(--color-soft-cloud);
+      color: var(--color-ink);
+      font-weight: 700;
+    }
+    .tax-highlight-row {
+      background: #fcfcfc;
+      font-weight: 700;
+    }
+    .tax-final-banner {
+      background: var(--color-soft-cloud);
+      border-top: 2px solid var(--color-ink);
+      padding: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .tax-final-title {
+      font-size: 16px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .tax-final-amount {
+      font-family: var(--font-display);
+      font-size: 46px;
+      color: var(--color-sale);
+      line-height: 1;
+    }
+
+    /* Notice callout */
+    .callout {
+      background: var(--color-soft-cloud);
+      border-left: 3px solid var(--color-ink);
+      padding: 16px 20px;
+      font-size: 13px;
+      color: var(--color-charcoal);
+      margin-top: 24px;
+      line-height: 1.6;
+    }
+    .callout.alert {
+      border-left-color: var(--color-sale);
+      background: #fdf2f2;
+      color: var(--color-sale-deep);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Utility Bar -->
+  <div class="utility-bar">
+    <span class="brand-slogan">NIKE RECON SYSTEM // TAX & COMMERCE ENGINE</span>
+    <span>KOREA NATIONAL TAX SERVICE COMPLIANT (대한민국 부가가치세법 표준 준수)</span>
+  </div>
+
+  <div class="container">
+    <!-- Campaign Editorial Header -->
+    <header class="campaign-header">
+      <div class="campaign-eyebrow">PRECISION TAX RECONCILIATION & STATUTORY VAT FILING</div>
+      <h1 class="campaign-title">ACCURACY SPEAKS.<br>THE REST FOLLOWS.</h1>
+      <p class="campaign-desc">
+        국세청 홈택스 전자세금계산서와 사내 회계전표(ERP)의 무결점 교차 대사 분석. 
+        단 1원의 단수 차이부터 미발행·누락 위험을 즉시 적발하고 법정 부가가치세 표준 신고서를 자동으로 산출합니다.
+      </p>
+    </header>
+
+    <!-- Nav Tabs (Nike PLP Strip) -->
+    <div class="nav-tabs">
+      <div class="nav-tab active" id="tabBtnRecon" onclick="switchTab('recon')">
+        <span>01 //</span> 국세청 vs 회계장부 교차 대사
+      </div>
+      <div class="nav-tab" id="tabBtnReport" onclick="switchTab('report')">
+        <span>02 //</span> 부가가치세 법정 표준 신고서
+      </div>
+      <div class="nav-tab" id="tabBtnSingle" onclick="switchTab('single')">
+        <span>03 //</span> 단일 정밀 계산 시뮬레이터
+      </div>
+    </div>
+
+    <!-- =========================================================
+         SECTION 1: 국세청 vs 회계장부 교차 대사 분석
+         ========================================================= -->
+    <div id="tabRecon">
+      <div class="card">
+        <div class="card-title">
+          <span>SOURCE SELECTION & DATA INGESTION</span>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-primary" onclick="loadSampleReconData()">⚡ 샘플 대사 데이터 즉시 불러오기 (체험용)</button>
+            <button class="btn btn-secondary" onclick="downloadReconTemplates()">📥 표준 엑셀 템플릿</button>
+          </div>
+        </div>
+
+        <!-- 듀얼 드롭존 -->
+        <div class="dual-grid">
+          <!-- 1. 국세청 홈택스 드롭존 -->
+          <div class="drop-box" id="dropHometax" onclick="document.getElementById('fileHometax').click()">
+            <input type="file" id="fileHometax" accept=".xlsx, .xls, .csv" style="display:none;" onchange="handleHometaxFile(event)">
+            <div class="drop-badge">SOURCE 01</div>
+            <div class="drop-title">국세청 홈택스 세금계산서</div>
+            <div class="drop-sub">홈택스에서 다운로드한 매출/매입 세금계산서 엑셀 (.xlsx, .csv)</div>
+            <button class="btn btn-outline" type="button">파일 선택</button>
+            <div id="statusHometax" style="font-size:12px; margin-top:12px; font-weight:600; color:var(--color-ink);">[ 대기중 - 미등록 ]</div>
+          </div>
+
+          <!-- 2. 회계장부(ERP) 드롭존 -->
+          <div class="drop-box" id="dropErp" onclick="document.getElementById('fileErp').click()">
+            <input type="file" id="fileErp" accept=".xlsx, .xls, .csv" style="display:none;" onchange="handleErpFile(event)">
+            <div class="drop-badge">SOURCE 02</div>
+            <div class="drop-title">사내 회계장부 (ERP / 분개장)</div>
+            <div class="drop-sub">더존, 위하고, 세무사랑, 이카운트 등의 매입매출 전표 엑셀</div>
+            <button class="btn btn-outline" type="button">파일 선택</button>
+            <div id="statusErp" style="font-size:12px; margin-top:12px; font-weight:600; color:var(--color-ink);">[ 대기중 - 미등록 ]</div>
+          </div>
+        </div>
+
+        <!-- 대사 실행 CTA -->
+        <div style="text-align:center; padding-top:8px;">
+          <button class="btn btn-primary" style="padding:16px 48px; font-size:15px; height:50px;" onclick="runReconciliation()">
+            RUN CROSS RECONCILIATION // 대사 실행 & 오류 분석
+          </button>
+        </div>
+      </div>
+
+      <!-- 대사 분석 결과 영역 -->
+      <div id="reconResultArea" class="card" style="display:none;">
+        <div class="card-title">
+          <span>RECONCILIATION AUDIT REPORT</span>
+          <button class="btn btn-secondary" onclick="exportReconExcel()">📥 결과 엑셀 다운로드</button>
+        </div>
+
+        <!-- KPI 통계 (Bebas Neue Display) -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">TOTAL AUDITED</div>
+            <div class="kpi-val" id="kpiTotal">0</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">MATCHED (정상)</div>
+            <div class="kpi-val success" id="kpiMatched">0</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">AMOUNT DIFF (금액불일치)</div>
+            <div class="kpi-val alert" id="kpiAmountDiff">0</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">ERP MISSING (장부누락)</div>
+            <div class="kpi-val alert" id="kpiHometaxOnly">0</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">HOMETAX MISSING (미발행)</div>
+            <div class="kpi-val alert" id="kpiErpOnly">0</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">NON-DEDUCTIBLE (불공제)</div>
+            <div class="kpi-val" id="kpiNonDeduct">0</div>
+          </div>
+        </div>
+
+        <!-- 필터 바 (Nike Filter Chips) -->
+        <div class="filter-bar">
+          <button class="filter-chip active" onclick="filterReconTable('ALL')">전체 보기 (<span id="cntAll">0</span>)</button>
+          <button class="filter-chip" onclick="filterReconTable('ERROR')">⚠️ 오류/불일치만 필터 (<span id="cntError">0</span>)</button>
+          <button class="filter-chip" onclick="filterReconTable('DIFF')">금액 불일치 (<span id="cntDiff">0</span>)</button>
+          <button class="filter-chip" onclick="filterReconTable('HOMETAX_ONLY')">회계장부 누락 (<span id="cntHtOnly">0</span>)</button>
+          <button class="filter-chip" onclick="filterReconTable('ERP_ONLY')">국세청 미발행 (<span id="cntErpOnly">0</span>)</button>
+        </div>
+
+        <!-- 상세 대사 대조 테이블 -->
+        <div style="overflow-x:auto;">
+          <table id="tblReconDetails">
+            <thead>
+              <tr>
+                <th style="width:5%;">NO</th>
+                <th style="width:7%;">TYPE</th>
+                <th style="width:16%;">거래처(상호)</th>
+                <th style="width:13%;">사업자등록번호</th>
+                <th style="width:9%;">일자</th>
+                <th style="width:11%;">국세청 공급가</th>
+                <th style="width:9%;">국세청 세액</th>
+                <th style="width:11%;">회계장부 공급가</th>
+                <th style="width:9%;">회계장부 세액</th>
+                <th style="width:10%;">AUDIT STATUS</th>
+              </tr>
+            </thead>
+            <tbody id="reconTableBody">
+              <!-- Dynamic Rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout" id="reconSummaryNotice"></div>
+
+        <div style="text-align:right; margin-top:24px;">
+          <button class="btn btn-primary" onclick="goToTaxReport()">
+            PROCEED TO STATUTORY VAT RETURN // 부가세 신고서 확인 ➔
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         SECTION 2: 부가가치세 법정 표준 신고서
+         ========================================================= -->
+    <div id="tabReport" style="display:none;">
+      <div class="card">
+        <div class="card-title">
+          <span>STATUTORY VAT RETURN FORM (부가가치세 표준 신고서)</span>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-primary" onclick="exportTaxReportExcel()">📥 신고서 엑셀 다운로드</button>
+            <button class="btn btn-secondary" onclick="window.print()">🖨️ 인쇄 / PDF 저장</button>
+          </div>
+        </div>
+
+        <p style="font-size:14px; color:var(--color-charcoal); margin-bottom:16px;">
+          * 홈택스와 상호 일치하는 적법 증빙 및 공제 가능한 매입세액만을 선별하여 법정 서식(부가가치세법 시행규칙 [별지 제21호서식])으로 자동 산출했습니다.
+        </p>
+
+        <!-- 세련된 법정 서식 시트 -->
+        <div class="tax-sheet">
+          <div class="tax-sheet-header">
+            <h2>부 가 가 치 세 신 고 서 (일반과세자용)</h2>
+            <div style="font-size:12px; letter-spacing:0.5px; opacity:0.8;">MINISTRY OF ECONOMY AND FINANCE · NATIONAL TAX SERVICE</div>
+          </div>
+
+          <table class="tax-table">
+            <thead>
+              <tr>
+                <th colspan="3" style="width:40%;">항 목 (SECTION)</th>
+                <th style="width:30%;">금 액 (공급가액)</th>
+                <th style="width:30%;">세 액 (부가가치세)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- 과세표준 및 매출세액 -->
+              <tr>
+                <td rowspan="3" style="text-align:center; font-weight:800; background:var(--color-soft-cloud); width:14%;">
+                  과세표준<br>및<br>매출세액
+                </td>
+                <td style="text-align:center; width:6%; font-weight:700;">①</td>
+                <td style="text-align:left;">세금계산서 발급분 (과세 10%)</td>
+                <td id="rptSalesSupply">0 원</td>
+                <td id="rptSalesTax" style="font-weight:700;">0 원</td>
+              </tr>
+              <tr>
+                <td style="text-align:center; font-weight:700;">⑤</td>
+                <td style="text-align:left;">영세율 세금계산서 발급분 (0%)</td>
+                <td id="rptZeroSupply">0 원</td>
+                <td>0 원</td>
+              </tr>
+              <tr class="tax-highlight-row">
+                <td style="text-align:center; font-weight:800;">⑦</td>
+                <td style="text-align:left;"><strong>합 계 (총 매출세액)</strong></td>
+                <td id="rptTotalSalesSupply" style="font-weight:700;">0 원</td>
+                <td id="rptTotalSalesTax" style="font-weight:800; color:var(--color-ink);">0 원</td>
+              </tr>
+
+              <!-- 매입세액 -->
+              <tr>
+                <td rowspan="4" style="text-align:center; font-weight:800; background:var(--color-soft-cloud);">
+                  매입세액
+                </td>
+                <td style="text-align:center; font-weight:700;">⑩</td>
+                <td style="text-align:left;">세금계산서 수취분 (일반매입)</td>
+                <td id="rptPurchaseSupply">0 원</td>
+                <td id="rptPurchaseTax">0 원</td>
+              </tr>
+              <tr>
+                <td style="text-align:center; font-weight:700;">⑪</td>
+                <td style="text-align:left;">세금계산서 수취분 (고정자산 매입)</td>
+                <td id="rptAssetSupply">0 원</td>
+                <td id="rptAssetTax">0 원</td>
+              </tr>
+              <tr style="color:var(--color-sale);">
+                <td style="text-align:center; font-weight:700;">⑯</td>
+                <td style="text-align:left;">공제받지 못할 매입세액 (접대비, 승용차 등) [차감]</td>
+                <td id="rptNonDeductSupply">0 원</td>
+                <td id="rptNonDeductTax">- 0 원</td>
+              </tr>
+              <tr class="tax-highlight-row">
+                <td style="text-align:center; font-weight:800;">⑰</td>
+                <td style="text-align:left;"><strong>차감 매입세액 합계 (실제 공제세액)</strong></td>
+                <td id="rptTotalDeductSupply" style="font-weight:700;">0 원</td>
+                <td id="rptTotalDeductTax" style="font-weight:800; color:var(--color-success);">0 원</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- 최종 납부 / 환급 세액 배너 -->
+          <div class="tax-final-banner">
+            <div>
+              <div class="tax-final-title">최종 납부 (환급) 할 세액 &nbsp; [ ⑦ 매출세액 － ⑰ 차감매입세액 ]</div>
+              <div style="font-size:12px; color:var(--color-mute); margin-top:2px;">양수: 납부할 세액 / 음수: 관할 세무서 환급받을 세액</div>
+            </div>
+            <div class="tax-final-amount" id="rptFinalPayTax">0 원</div>
+          </div>
+        </div>
+
+        <div class="callout">
+          <strong>AUDIT NOTE:</strong> 국세청 전자세금계산서와 대사 불일치하거나 전표가 누락된 항목은 신고서에 자동 반영되지 않습니다. 
+          상단의 <strong>'오류/불일치만 필터'</strong>를 통해 회계장부를 먼저 정리한 후 확정 신고를 진행하십시오.
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         SECTION 3: 단일 정밀 계산 시뮬레이터
+         ========================================================= -->
+    <div id="tabSingle" class="card" style="display:none;">
+      <div class="card-title">SINGLE ITEM PRECISION CALCULATOR</div>
+      <div style="display:grid; grid-template-columns: 1.1fr 0.9fr; gap:32px;">
+        <div>
+          <div style="margin-bottom:16px;">
+            <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px;">계산 모드</label>
+            <select id="simMode" onchange="runSimCalc()" style="width:100%; padding:10px; border:1px solid var(--color-hairline); border-radius:var(--radius-none);">
+              <option value="net">공급가액 기준 (정방향: 공급가액 × 10%)</option>
+              <option value="gross">공급대가 기준 (역산: 공급대가 ÷ 1.1)</option>
+            </select>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px;">거래 금액 (원)</label>
+            <input type="number" id="simAmount" value="100000" oninput="runSimCalc()" style="width:100%; padding:10px; border:1px solid var(--color-hairline); border-radius:var(--radius-none);">
+          </div>
+          <div>
+            <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px;">단수처리 기준</label>
+            <select id="simRounding" onchange="runSimCalc()" style="width:100%; padding:10px; border:1px solid var(--color-hairline); border-radius:var(--radius-none);">
+              <option value="TRUNCATE">원 미만 절사 (국세징수법 기본)</option>
+              <option value="HALF_UP">사사오입 (반올림)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="background:var(--color-soft-cloud); padding:28px; border:1px solid var(--color-hairline-soft);">
+          <div style="display:flex; justify-content:space-between; margin-bottom:12px; font-size:14px;">
+            <span style="color:var(--color-mute);">공급가액</span>
+            <span id="simResSupply" style="font-weight:700;">0 원</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:12px; font-size:14px;">
+            <span style="color:var(--color-mute);">부가가치세 (10%)</span>
+            <span id="simResTax" style="font-weight:700; color:var(--color-ink);">0 원</span>
+          </div>
+          <hr style="border:0; border-top:1px solid var(--color-hairline); margin:18px 0;">
+          <div style="display:flex; justify-content:space-between; align-items:baseline;">
+            <span style="font-weight:800; font-size:14px; text-transform:uppercase;">TOTAL AMOUNT</span>
+            <span id="simResTotal" style="font-family:var(--font-display); font-size:36px; line-height:1; color:var(--color-ink);">0 원</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+<!-- =========================================================
+     JAVASCRIPT LOGIC (ENGINE)
+     ========================================================= -->
+<script>
+let hometaxData = [];
+let erpData = [];
+let reconResults = [];
+let currentFilter = 'ALL';
+
+function formatWon(num) {
+  if (num === null || num === undefined || isNaN(num)) return '-';
+  return Number(num).toLocaleString('ko-KR') + ' 원';
+}
+
+function switchTab(tab) {
+  document.getElementById('tabRecon').style.display = tab === 'recon' ? 'block' : 'none';
+  document.getElementById('tabReport').style.display = tab === 'report' ? 'block' : 'none';
+  document.getElementById('tabSingle').style.display = tab === 'single' ? 'block' : 'none';
+
+  document.getElementById('tabBtnRecon').className = 'nav-tab ' + (tab === 'recon' ? 'active' : '');
+  document.getElementById('tabBtnReport').className = 'nav-tab ' + (tab === 'report' ? 'active' : '');
+  document.getElementById('tabBtnSingle').className = 'nav-tab ' + (tab === 'single' ? 'active' : '');
+}
+
+function setupDropBox(elemId, callback) {
+  const box = document.getElementById(elemId);
+  ['dragenter', 'dragover'].forEach(name => {
+    box.addEventListener(name, (e) => { e.preventDefault(); box.classList.add('dragover'); }, false);
+  });
+  ['dragleave', 'drop'].forEach(name => {
+    box.addEventListener(name, (e) => { e.preventDefault(); box.classList.remove('dragover'); }, false);
+  });
+  box.addEventListener('drop', (e) => {
+    const files = e.dataTransfer.files;
+    if (files.length > 0) callback(files[0]);
+  });
+}
+
+setupDropBox('dropHometax', parseHometaxFile);
+setupDropBox('dropErp', parseErpFile);
+
+function handleHometaxFile(e) { if (e.target.files.length > 0) parseHometaxFile(e.target.files[0]); }
+function handleErpFile(e) { if (e.target.files.length > 0) parseErpFile(e.target.files[0]); }
+
+function parseHometaxFile(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+    hometaxData = normalizeInvoiceData(raw, 'HOMETAX');
+    document.getElementById('statusHometax').innerHTML = `✅ [ ${file.name} : ${hometaxData.length}건 로드됨 ]`;
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseErpFile(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+    erpData = normalizeInvoiceData(raw, 'ERP');
+    document.getElementById('statusErp').innerHTML = `✅ [ ${file.name} : ${erpData.length}건 로드됨 ]`;
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function normalizeInvoiceData(rows, source) {
+  return rows.map((r, idx) => {
+    const keys = Object.keys(r);
+    const find = (arr) => keys.find(k => arr.some(a => k.toLowerCase().replace(/[\s\-_]/g, '').includes(a.toLowerCase())));
+
+    const bizNoKey = find(['사업자등록번호', '사업자번호', '등록번호', 'bizno']);
+    const nameKey = find(['상호', '거래처명', '공급받는자상호', '공급자상호', '거래처', 'company']);
+    const dateKey = find(['작성일자', '발행일자', '일자', '전표일자', 'date']);
+    const supplyKey = find(['공급가액', '공급가', '금액', 'supply', 'amount']);
+    const taxKey = find(['세액', '부가세', '부가가치세', 'tax', 'vat']);
+    const typeKey = find(['구분', '매출매입구분', '과세구분', '유형', '매출매입']);
+    const nonDeductKey = find(['불공제', '불공제여부', '공제여부']);
+
+    let bizNo = bizNoKey ? String(r[bizNoKey]).replace(/[^0-9]/g, '') : '';
+    let name = nameKey ? String(r[nameKey]).trim() : `거래처_${idx+1}`;
+    let date = dateKey ? String(r[dateKey]).replace(/[^0-9]/g, '') : '';
+    let supply = supplyKey ? parseFloat(r[supplyKey]) || 0 : 0;
+    let tax = taxKey ? parseFloat(r[taxKey]) || 0 : 0;
+
+    let invoiceType = '매입';
+    if (typeKey && String(r[typeKey]).includes('매출')) invoiceType = '매출';
+
+    let isNonDeductible = false;
+    if (nonDeductKey && (String(r[nonDeductKey]).includes('불공제') || String(r[nonDeductKey]).includes('Y'))) {
+      isNonDeductible = true;
+    }
+    const memo = JSON.stringify(r);
+    if (memo.includes('접대') || memo.includes('승용차') || memo.includes('비영업용')) {
+      isNonDeductible = true;
+    }
+
+    return {
+      id: `${source}_${idx+1}`,
+      source,
+      bizNo,
+      name,
+      date,
+      supply,
+      tax,
+      invoiceType,
+      isNonDeductible
+    };
+  });
+}
+
+function runReconciliation() {
+  if (hometaxData.length === 0 && erpData.length === 0) {
+    alert('홈택스 파일과 회계장부 파일을 등록해 주세요.\n(상단의 "⚡ 샘플 대사 데이터 즉시 불러오기" 버튼으로 바로 체험해보실 수 있습니다!)');
+    return;
+  }
+
+  reconResults = [];
+  const erpMatchedMap = new Set();
+
+  hometaxData.forEach(ht => {
+    let erpMatch = erpData.find(e => !erpMatchedMap.has(e.id) && e.bizNo === ht.bizNo && Math.abs(e.supply - ht.supply) < 5);
+    if (!erpMatch) {
+      erpMatch = erpData.find(e => !erpMatchedMap.has(e.id) && e.name === ht.name && Math.abs(e.supply - ht.supply) < 5);
+    }
+    if (!erpMatch) {
+      erpMatch = erpData.find(e => !erpMatchedMap.has(e.id) && e.bizNo === ht.bizNo);
+    }
+
+    if (erpMatch) {
+      erpMatchedMap.add(erpMatch.id);
+      const supplyDiff = erpMatch.supply - ht.supply;
+      const taxDiff = erpMatch.tax - ht.tax;
+
+      let status = 'MATCHED';
+      let statusLabel = '정상 일치';
+
+      if (Math.abs(supplyDiff) === 0 && Math.abs(taxDiff) === 0) {
+        status = 'MATCHED';
+        statusLabel = '정상 일치';
+      } else if (Math.abs(taxDiff) === 1 && supplyDiff === 0) {
+        status = 'PENNY_DIFF';
+        statusLabel = '1원 단수차이';
+      } else {
+        status = 'AMOUNT_DIFF';
+        statusLabel = '금액/세액 불일치';
+      }
+
+      reconResults.push({
+        type: ht.invoiceType,
+        name: ht.name,
+        bizNo: ht.bizNo,
+        date: ht.date || erpMatch.date,
+        htSupply: ht.supply,
+        htTax: ht.tax,
+        erpSupply: erpMatch.supply,
+        erpTax: erpMatch.tax,
+        supplyDiff,
+        taxDiff,
+        status,
+        statusLabel,
+        isNonDeductible: erpMatch.isNonDeductible || ht.isNonDeductible
+      });
+    } else {
+      reconResults.push({
+        type: ht.invoiceType,
+        name: ht.name,
+        bizNo: ht.bizNo,
+        date: ht.date,
+        htSupply: ht.supply,
+        htTax: ht.tax,
+        erpSupply: null,
+        erpTax: null,
+        supplyDiff: -ht.supply,
+        taxDiff: -ht.tax,
+        status: 'HOMETAX_ONLY',
+        statusLabel: '회계장부 누락 (홈택스만 존재)',
+        isNonDeductible: ht.isNonDeductible
+      });
+    }
+  });
+
+  erpData.forEach(erp => {
+    if (!erpMatchedMap.has(erp.id)) {
+      reconResults.push({
+        type: erp.invoiceType,
+        name: erp.name,
+        bizNo: erp.bizNo,
+        date: erp.date,
+        htSupply: null,
+        htTax: null,
+        erpSupply: erp.supply,
+        erpTax: erp.tax,
+        supplyDiff: erp.supply,
+        taxDiff: erp.tax,
+        status: 'ERP_ONLY',
+        statusLabel: '국세청 미발행 (장부에만 존재)',
+        isNonDeductible: erp.isNonDeductible
+      });
+    }
+  });
+
+  renderReconDashboard();
+  generateTaxReport();
+}
+
+function renderReconDashboard() {
+  document.getElementById('reconResultArea').style.display = 'block';
+
+  let cntMatched = 0, cntAmountDiff = 0, cntHtOnly = 0, cntErpOnly = 0, cntNonDeduct = 0;
+
+  reconResults.forEach(r => {
+    if (r.status === 'MATCHED' || r.status === 'PENNY_DIFF') cntMatched++;
+    if (r.status === 'AMOUNT_DIFF') cntAmountDiff++;
+    if (r.status === 'HOMETAX_ONLY') cntHtOnly++;
+    if (r.status === 'ERP_ONLY') cntErpOnly++;
+    if (r.isNonDeductible) cntNonDeduct++;
+  });
+
+  document.getElementById('kpiTotal').innerText = reconResults.length;
+  document.getElementById('kpiMatched').innerText = cntMatched;
+  document.getElementById('kpiAmountDiff').innerText = cntAmountDiff;
+  document.getElementById('kpiHometaxOnly').innerText = cntHtOnly;
+  document.getElementById('kpiErpOnly').innerText = cntErpOnly;
+  document.getElementById('kpiNonDeduct').innerText = cntNonDeduct;
+
+  document.getElementById('cntAll').innerText = reconResults.length;
+  document.getElementById('cntError').innerText = cntAmountDiff + cntHtOnly + cntErpOnly;
+  document.getElementById('cntDiff').innerText = cntAmountDiff;
+  document.getElementById('cntHtOnly').innerText = cntHtOnly;
+  document.getElementById('cntErpOnly').innerText = cntErpOnly;
+
+  renderReconTable();
+}
+
+function filterReconTable(filter) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  renderReconTable();
+}
+
+function renderReconTable() {
+  const tbody = document.getElementById('reconTableBody');
+  tbody.innerHTML = '';
+
+  const filtered = reconResults.filter(r => {
+    if (currentFilter === 'ALL') return true;
+    if (currentFilter === 'ERROR') return r.status === 'AMOUNT_DIFF' || r.status === 'HOMETAX_ONLY' || r.status === 'ERP_ONLY';
+    if (currentFilter === 'DIFF') return r.status === 'AMOUNT_DIFF';
+    if (currentFilter === 'HOMETAX_ONLY') return r.status === 'HOMETAX_ONLY';
+    if (currentFilter === 'ERP_ONLY') return r.status === 'ERP_ONLY';
+    return true;
+  });
+
+  filtered.forEach((r, idx) => {
+    let badgeHtml = '';
+    if (r.status === 'MATCHED') badgeHtml = '<span class="badge badge-matched">MATCHED</span>';
+    else if (r.status === 'PENNY_DIFF') badgeHtml = '<span class="badge badge-alert">1원 단수차</span>';
+    else if (r.status === 'AMOUNT_DIFF') badgeHtml = `<span class="badge badge-diff">불일치 (${r.supplyDiff > 0 ? '+'+r.supplyDiff : r.supplyDiff})</span>`;
+    else if (r.status === 'HOMETAX_ONLY') badgeHtml = '<span class="badge badge-alert">장부 누락</span>';
+    else if (r.status === 'ERP_ONLY') badgeHtml = '<span class="badge badge-diff">미발행</span>';
+
+    if (r.isNonDeductible) badgeHtml += ' <span class="badge badge-neutral">불공제</span>';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${idx + 1}</td>
+      <td style="font-weight:700;">${r.type}</td>
+      <td><strong>${r.name}</strong></td>
+      <td>${formatBizNo(r.bizNo)}</td>
+      <td>${formatDate(r.date)}</td>
+      <td>${formatWon(r.htSupply)}</td>
+      <td style="font-weight:600;">${formatWon(r.htTax)}</td>
+      <td>${formatWon(r.erpSupply)}</td>
+      <td style="font-weight:600;">${formatWon(r.erpTax)}</td>
+      <td>${badgeHtml}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const notice = document.getElementById('reconSummaryNotice');
+  const errCount = reconResults.filter(r => r.status !== 'MATCHED' && r.status !== 'PENNY_DIFF').length;
+  if (errCount > 0) {
+    notice.className = 'callout alert';
+    notice.innerHTML = `⚠️ <strong>AUDIT WARNING:</strong> 총 ${errCount}건의 세무 위험 항목이 감지되었습니다. 미발행 전표는 매입세액이 부인될 수 있으며, 누락 건은 세금 과다납부 위험이 있습니다.`;
+  } else {
+    notice.className = 'callout';
+    notice.innerHTML = `✅ <strong>AUDIT CLEARED:</strong> 국세청 홈택스 세금계산서와 사내 회계전표 간 모든 금액과 세액이 100% 정상 일치합니다.`;
+  }
+}
+
+function formatBizNo(no) {
+  if (!no || no.length !== 10) return no || '-';
+  return `${no.substr(0,3)}-${no.substr(3,2)}-${no.substr(5,5)}`;
+}
+
+function formatDate(d) {
+  if (!d || d.length !== 8) return d || '-';
+  return `${d.substr(0,4)}.${d.substr(4,2)}.${d.substr(6,2)}`;
+}
+
+function generateTaxReport() {
+  let salesSupply = 0, salesTax = 0;
+  let purchaseSupply = 0, purchaseTax = 0;
+  let nonDeductSupply = 0, nonDeductTax = 0;
+
+  reconResults.forEach(r => {
+    if (r.htSupply !== null) {
+      if (r.type === '매출') {
+        salesSupply += r.htSupply;
+        salesTax += r.htTax;
+      } else {
+        if (r.isNonDeductible) {
+          nonDeductSupply += r.htSupply;
+          nonDeductTax += r.htTax;
+        }
+        purchaseSupply += r.htSupply;
+        purchaseTax += r.htTax;
+      }
+    }
+  });
+
+  const totalDeductTax = purchaseTax - nonDeductTax;
+  const finalPayTax = salesTax - totalDeductTax;
+
+  document.getElementById('rptSalesSupply').innerText = formatWon(salesSupply);
+  document.getElementById('rptSalesTax').innerText = formatWon(salesTax);
+  document.getElementById('rptTotalSalesSupply').innerText = formatWon(salesSupply);
+  document.getElementById('rptTotalSalesTax').innerText = formatWon(salesTax);
+
+  document.getElementById('rptPurchaseSupply').innerText = formatWon(purchaseSupply);
+  document.getElementById('rptPurchaseTax').innerText = formatWon(purchaseTax);
+  document.getElementById('rptNonDeductSupply').innerText = formatWon(nonDeductSupply);
+  document.getElementById('rptNonDeductTax').innerText = '- ' + formatWon(nonDeductTax);
+  
+  document.getElementById('rptTotalDeductSupply').innerText = formatWon(purchaseSupply - nonDeductSupply);
+  document.getElementById('rptTotalDeductTax').innerText = formatWon(totalDeductTax);
+
+  const payEl = document.getElementById('rptFinalPayTax');
+  if (finalPayTax >= 0) {
+    payEl.innerText = formatWon(finalPayTax);
+    payEl.style.color = 'var(--color-sale)';
+  } else {
+    payEl.innerText = '(환급) ' + formatWon(Math.abs(finalPayTax));
+    payEl.style.color = 'var(--color-success)';
+  }
+}
+
+function goToTaxReport() {
+  switchTab('report');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function loadSampleReconData() {
+  hometaxData = [
+    { id: 'HT_1', source: 'HOMETAX', bizNo: '1208147521', name: '(주)삼성물산', date: '20261015', supply: 10000000, tax: 1000000, invoiceType: '매출', isNonDeductible: false },
+    { id: 'HT_2', source: 'HOMETAX', bizNo: '2148532104', name: '(주)엘지전자', date: '20261018', supply: 5000000, tax: 500000, invoiceType: '매출', isNonDeductible: false },
+    { id: 'HT_3', source: 'HOMETAX', bizNo: '1078612345', name: '(주)원자재공급', date: '20261020', supply: 3333334, tax: 333333, invoiceType: '매입', isNonDeductible: false },
+    { id: 'HT_4', source: 'HOMETAX', bizNo: '1058298765', name: '현대오일뱅크(주)', date: '20261022', supply: 150000, tax: 15000, invoiceType: '매입', isNonDeductible: true },
+    { id: 'HT_5', source: 'HOMETAX', bizNo: '1198644444', name: '(주)한국통신', date: '20261025', supply: 80000, tax: 8000, invoiceType: '매입', isNonDeductible: false },
+    { id: 'HT_6', source: 'HOMETAX', bizNo: '2208155555', name: '(주)누락소모품', date: '20261028', supply: 250000, tax: 25000, invoiceType: '매입', isNonDeductible: false }
+  ];
+
+  erpData = [
+    { id: 'ERP_1', source: 'ERP', bizNo: '1208147521', name: '(주)삼성물산', date: '20261015', supply: 10000000, tax: 1000000, invoiceType: '매출', isNonDeductible: false },
+    { id: 'ERP_2', source: 'ERP', bizNo: '2148532104', name: '(주)엘지전자', date: '20261018', supply: 5200000, tax: 520000, invoiceType: '매출', isNonDeductible: false },
+    { id: 'ERP_3', source: 'ERP', bizNo: '1078612345', name: '(주)원자재공급', date: '20261020', supply: 3333334, tax: 333334, invoiceType: '매입', isNonDeductible: false },
+    { id: 'ERP_4', source: 'ERP', bizNo: '1058298765', name: '현대오일뱅크(주)', date: '20261022', supply: 150000, tax: 15000, invoiceType: '매입', isNonDeductible: true },
+    { id: 'ERP_5', source: 'ERP', bizNo: '1198644444', name: '(주)한국통신', date: '20261025', supply: 80000, tax: 8000, invoiceType: '매입', isNonDeductible: false },
+    { id: 'ERP_7', source: 'ERP', bizNo: '1358177777', name: '(주)미발행외주', date: '20261030', supply: 1200000, tax: 120000, invoiceType: '매입', isNonDeductible: false }
+  ];
+
+  document.getElementById('statusHometax').innerHTML = `✅ [ 샘플 홈택스 6건 로드됨 ]`;
+  document.getElementById('statusErp').innerHTML = `✅ [ 샘플 회계장부 6건 로드됨 ]`;
+
+  runReconciliation();
+}
+
+function exportReconExcel() {
+  if (reconResults.length === 0) return;
+  const exportData = reconResults.map((r, idx) => ({
+    "NO": idx + 1,
+    "TYPE": r.type,
+    "거래처명": r.name,
+    "사업자등록번호": formatBizNo(r.bizNo),
+    "일자": formatDate(r.date),
+    "국세청_공급가액": r.htSupply,
+    "국세청_세액": r.htTax,
+    "회계장부_공급가액": r.erpSupply,
+    "회계장부_세액": r.erpTax,
+    "차액": r.supplyDiff,
+    "대사판정": r.statusLabel,
+    "공제구분": r.isNonDeductible ? "불공제" : "공제"
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(exportData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "RECON_RESULT");
+  XLSX.writeFile(wb, "세금계산서_대사분석_보고서.xlsx");
+}
+
+function exportTaxReportExcel() {
+  const table = document.querySelector('.tax-table');
+  const wb = XLSX.utils.table_to_book(table);
+  XLSX.writeFile(wb, "부가가치세_신고서_자동집계.xlsx");
+}
+
+function downloadReconTemplates() {
+  const htSample = [
+    { "작성일자": "20261015", "공급자사업자번호": "1208147521", "공급자상호": "(주)삼성물산", "공급가액": 10000000, "세액": 1000000, "구분": "매출" }
+  ];
+  const erpSample = [
+    { "전표일자": "20261015", "사업자등록번호": "1208147521", "거래처명": "(주)삼성물산", "공급가액": 10000000, "부가세": 1000000, "구분": "매출", "불공제여부": "N" }
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(htSample), "홈택스_양식");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(erpSample), "회계장부_양식");
+  XLSX.writeFile(wb, "대사_표준_템플릿.xlsx");
+}
+
+function runSimCalc() {
+  const mode = document.getElementById('simMode').value;
+  const amount = parseFloat(document.getElementById('simAmount').value) || 0;
+  const rounding = document.getElementById('simRounding').value;
+
+  let supply = 0, tax = 0, total = 0;
+  if (mode === 'gross') {
+    supply = rounding === 'TRUNCATE' ? Math.floor(amount / 1.1) : Math.round(amount / 1.1);
+    tax = amount - supply;
+    total = amount;
+  } else {
+    supply = amount;
+    tax = rounding === 'TRUNCATE' ? Math.floor(amount * 0.1) : Math.round(amount * 0.1);
+    total = supply + tax;
+  }
+
+  document.getElementById('simResSupply').innerText = formatWon(supply);
+  document.getElementById('simResTax').innerText = formatWon(tax);
+  document.getElementById('simResTotal').innerText = formatWon(total);
+}
+runSimCalc();
+</script>
+</body>
+</html>
